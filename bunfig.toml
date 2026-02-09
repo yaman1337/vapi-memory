@@ -1,0 +1,6 @@
+[install]
+lockfile = true
+
+[test]
+timeout = 5000
+coverage = false
