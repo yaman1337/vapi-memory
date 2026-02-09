@@ -19,15 +19,14 @@
   },
   "files": [
     "dist",
-    "src",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "build": "bun run build:esm && bun run build:cjs && bun run build:types",
-    "build:esm": "bun build ./src/index.ts --outdir ./dist --target node --format esm --external *",
-    "build:cjs": "bun build ./src/index.ts --outfile ./dist/index.cjs --target node --format cjs --external *",
+    "build:esm": "bun build src/index.ts src/client/ src/builders/ src/formatters/ src/tools/ src/types/ src/utils/ --outdir ./dist --target node --format esm --external supermemory",
+    "build:cjs": "bun build src/index.ts src/client/ src/builders/ src/formatters/ src/tools/ src/types/ src/utils/ --outfile ./dist/index.cjs --target node --format cjs --external supermemory",
     "build:types": "tsc --emitDeclarationOnly",
     "test": "bun test",
     "test:watch": "bun test --watch",
