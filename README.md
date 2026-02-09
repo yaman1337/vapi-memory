@@ -1,105 +1,18 @@
 # vapi-memory
 
-Memory provider for Vapi voice AI agents using Supermemory as backend. Enable your Vapi assistants to remember context across calls, maintain user profiles, and retrieve relevant memories for personalized conversations.
+**Give your Vapi voice AI agents long-term memory.** Make them remember conversations across calls, maintain user profiles, and retrieve relevant context for personalized conversations every time.
 
-## Features
+## 🚀 Why vapi-memory?
 
-- ✅ **Zero-config setup**: Get started in 3 lines of code
-- ✅ **Seamless Vapi integration**: Works with Vapi's server URL and tool patterns
-- ✅ **TypeScript-first**: Full type safety and IntelliSense support
-- ✅ **Context management**: Automatic token budgeting and context formatting
-- ✅ **User profiles**: Maintains static and dynamic user information
-- ✅ **Semantic search**: Retrieves relevant memories based on queries
-- ✅ **Intelligent caching**: LRU cache with automatic cleanup for performance
-- ✅ **Memory deduplication**: Removes duplicate and similar memories automatically
-- ✅ **Priority-based ranking**: Sorts context by importance
-- ✅ **Production-ready**: Error handling, logging, and monitoring
+Voice AI is powerful, but without memory, every call feels like talking to a stranger. vapi-memory solves this by:
 
-## Installation
+- ✅ **Remember conversations** across calls - not just within a session
+- ✅ **Build user profiles** with facts, preferences, and history
+- ✅ **Retrieve relevant context** based on what's being discussed
+- ✅ **Seamless Vapi integration** - just 3 lines of code to get started
+- ✅ **Production-ready** - caching, error handling, and monitoring built-in
 
-```bash
-bun add vapi-memory
-# or
-npm install vapi-memory
-```
-
-## Advanced Usage
-
-### Token Counting
-
-Use the `TokenCounter` utility for accurate token estimation:
-
-```typescript
-import { TokenCounter } from 'vapi-memory';
-
-const text = 'Hello world!';
-const tokens = TokenCounter.estimate(text); // ~3 tokens
-
-// Format multiple texts within budget
-const result = TokenCounter.formatWithinBudget(
-  ['First', 'Second', 'Third'],
-  20
-);
-
-console.log(result.formatted); // Text within 20 tokens
-console.log(result.usedTokens); // Actual tokens used
-console.log(result.includedCount); // Number of items included
-```
-
-### Caching
-
-Use the `LRUCache` class for in-memory caching:
-
-```typescript
-import { LRUCache } from 'vapi-memory';
-
-const cache = new LRUCache<string, number>(100);
-
-cache.set('key1', 1);
-cache.set('key2', 2);
-
-const value = cache.get('key1'); // 1
-
-// Get cache statistics
-const stats = cache.getStats();
-console.log(`Cache hit rate: ${(stats.hitRate * 100).toFixed(2)}%`);
-
-// Cleanup expired entries
-cache.cleanup(60000); // Remove entries older than 60s
-```
-
-### Context Formatting
-
-Use `ContextFormatter` for advanced context management:
-
-```typescript
-import { ContextFormatter } from 'vapi-memory';
-
-const sections = [
-  { id: '1', content: 'User loves coffee', priority: 1, tokens: 10, source: 'profile' },
-  { id: '2', content: 'Recent complaint', priority: 2, tokens: 15, source: 'recent' },
-];
-
-const result = ContextFormatter.format(sections, {
-  maxTokens: 100,
-  includeTokens: true,
-  includeMetadata: true,
-});
-
-console.log(result.formatted); // Formatted context within budget
-console.log(result.usedTokens); // Tokens used
-console.log(result.metadata); // { totalItems, includedItems, excludedItems, sources }
-```
-
-## Quick Start
-
-```bash
-bun add vapi-memory
-# or
-npm install vapi-memory
-```
-
-## Quick Start
+## ⚡ Quick Start
 
 ```typescript
 import { VapiMemory } from 'vapi-memory';
@@ -108,44 +21,61 @@ const memory = new VapiMemory({
   apiKey: process.env.SUPERMEMORY_API_KEY
 });
 
-// Get user context
+// Get user context before/during call
 const context = await memory.getContext({
   userId: '+1234567890',
-  query: 'User calling for support'
+  query: 'User calling about support'
 });
 
-// Store conversation after call
+// Return personalized assistant with context
+return res.json(memory.createAssistantResponse(context, {
+  name: 'Support Agent',
+  model: { provider: 'openai', model: 'gpt-4o' }
+}));
+
+// Store conversation after call ends
 await memory.storeConversation({
   callId: 'call_123',
   userId: '+1234567890',
   transcript: [
-    { role: 'user', content: 'I need help' },
-    { role: 'assistant', content: 'How can I help?' }
+    { role: 'user', content: 'I need help with my order' },
+    { role: 'assistant', content: 'How can I help you today?' }
   ]
 });
 ```
 
-## Usage with Vapi
+## 📖 Installation
 
-### Server-Side Assistant Selection
+```bash
+bun add vapi-memory
+# or
+npm install vapi-memory
+```
+
+## 💡 Usage with Vapi
+
+### 1. Server-Side Assistant Selection (Recommended)
 
 Configure your Vapi phone number's server URL to return a personalized assistant:
 
 ```typescript
+import { VapiMemory } from 'vapi-memory';
+
+const memory = new VapiMemory({
+  apiKey: process.env.SUPERMEMORY_API_KEY
+});
+
 app.post('/api/assistant-selector', async (req, res) => {
   const { message, call } = req.body;
 
   if (message?.type === 'assistant-request') {
-    const memory = new VapiMemory({
-      apiKey: process.env.SUPERMEMORY_API_KEY
-    });
-
-    // Get context from Supermemory
+    // Get user's context from Supermemory
     const context = await memory.getContext({
-      userId: call.from.phoneNumber
+      userId: call.from.phoneNumber,
+      query: 'Incoming call'
     });
 
-    // Return assistant with context
+    // Return assistant with context baked in
     return res.json(memory.createAssistantResponse(context, {
       name: 'Support Agent',
       model: { provider: 'openai', model: 'gpt-4o' }
@@ -154,50 +84,22 @@ app.post('/api/assistant-selector', async (req, res) => {
 });
 ```
 
-### Post-Call Storage
+**How it works:**
+1. User calls your Vapi phone number
+2. Vapi sends `assistant-request` to your server
+3. Your server fetches user's memory from Supermemory
+4. You return a personalized assistant with that context
+5. User talks to an AI that remembers them!
 
-Store conversations after they end to build user profiles:
+### 2. Tool-Based Memory Retrieval
 
-```typescript
-app.post('/api/vapi-webhook', async (req, res) => {
-  const { type, call, messages } = req.body;
-
-  if (type === 'call-ended') {
-    const memory = new VapiMemory({
-      apiKey: process.env.SUPERMEMORY_API_KEY
-    });
-
-    await memory.storeConversation({
-      callId: call.id,
-      userId: call.from.phoneNumber,
-      transcript: messages.map(m => ({
-        role: m.role,
-        content: m.content
-      }))
-    });
-  }
-
-  res.status(200).end();
-});
-```
-
-### Memory Tool Integration
-
-Create a tool for dynamic memory retrieval during calls:
+Let your Vapi assistant proactively fetch memories during conversations:
 
 ```typescript
-const memoryTool = {
-  type: 'function' as const,
-  name: 'get_user_memories',
-  description: 'Retrieve relevant memories about the user',
-  parameters: {
-    type: 'object',
-    properties: {
-      query: { type: 'string' }
-    },
-    required: ['query']
-  }
-};
+import { VapiToolFactory } from 'vapi-memory';
+
+// Create memory tool
+const memoryTool = VapiToolFactory.createSearchTool();
 
 app.post('/api/tools/get_user_memories', async (req, res) => {
   const { parameters, call } = req.body;
@@ -206,6 +108,7 @@ app.post('/api/tools/get_user_memories', async (req, res) => {
     apiKey: process.env.SUPERMEMORY_API_KEY
   });
 
+  // Search for relevant memories based on what user asked
   const context = await memory.getContext({
     userId: call.from.phoneNumber,
     query: parameters.query
@@ -217,7 +120,92 @@ app.post('/api/tools/get_user_memories', async (req, res) => {
 });
 ```
 
-## API Reference
+**How it works:**
+1. User asks: "What did we discuss about my order?"
+2. Vapi calls your tool with query
+3. Your tool searches Supermemory for order-related memories
+4. Returns relevant memories to the AI
+5. AI responds with accurate context
+
+### 3. Post-Call Storage
+
+Store conversations to build user profiles over time:
+
+```typescript
+import { VapiMemory } from 'vapi-memory';
+
+app.post('/api/vapi-webhook', async (req, res) => {
+  const { type, call, messages } = req.body;
+
+  if (type === 'call-ended') {
+    const memory = new VapiMemory({
+      apiKey: process.env.SUPERMEMORY_API_KEY
+    });
+
+    // Store the full conversation
+    await memory.storeConversation({
+      callId: call.id,
+      userId: call.from.phoneNumber,
+      transcript: messages.map(m => ({
+        role: m.role,
+        content: m.content
+      })),
+      metadata: {
+        duration: call.duration,
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  res.status(200).end();
+});
+```
+
+**How it works:**
+1. Call ends
+2. Vapi sends `call-ended` webhook
+3. Your server stores the full conversation to Supermemory
+4. Supermemory's AI analyzes and adds it to the user's profile
+5. Next call, the AI knows everything discussed previously!
+
+## 📚 Examples
+
+Complete working examples in the `examples/` directory:
+
+| Example | Description | Link |
+|---------|-------------|------|
+| **[Basic Usage](examples/basic-usage.ts)** | Simple context retrieval and storage | [View](examples/basic-usage.ts) |
+| **[Vapi Bun Server](examples/vapi-bun-server.ts)** | Complete Vapi server with all patterns | [View](examples/vapi-bun-server.ts) |
+| **[Server Integration](examples/server-integration.ts)** | Server-side assistant selection | [View](examples/server-integration.ts) |
+| **[Advanced Context](examples/advanced-context.ts)** | Cache performance and context management | [View](examples/advanced-context.ts) |
+
+### Vapi Bun Server - Complete Example
+
+The [vapi-bun-server.ts](examples/vapi-bun-server.ts) example shows the complete flow:
+
+```
+User Calls → Vapi → Your Server → Get Context → Supermemory
+                                                      ↓
+                                              Return Assistant → Vapi → AI Response
+                                                      ↓
+                                              Store Conversation → Supermemory
+```
+
+**What's included:**
+- ✅ Assistant request handler with memory
+- ✅ Tool handlers for all 5 memory tools
+- ✅ Post-call webhook for conversation storage
+- ✅ CORS support for production
+- ✅ Hot-reload for development
+
+Run it:
+```bash
+cp .env.example .env
+# Edit .env and add your SUPERMEMORY_API_KEY
+bun run examples/vapi-bun-server.ts
+```
+
+## 🔧 API Reference
 
 ### `VapiMemory`
 
@@ -292,37 +280,54 @@ Adds a single memory to user profile.
 
 Creates a Vapi assistant response with formatted context.
 
-##### `createContextMessage(context: FormattedContext): Message`
+##### `buildWithTools(context, baseAssistant?, tools?): AssistantResponse`
 
-Creates a system message with formatted context.
+Builds assistant with memory tools for dynamic retrieval.
 
-## Configuration
+##### `buildWithVariables(context, baseAssistant?): AssistantResponse`
+
+Builds assistant with variable-based personalization (`{{userName}}`, etc.).
+
+##### `getCacheStats()`
+
+Returns cache statistics including hit rate and entry count.
+
+##### `clearCache()`
+
+Clears all cached profile data.
+
+##### `destroy()`
+
+Cleans up resources and stops background tasks.
+
+## ⚙️ Configuration
 
 ### Environment Variables
 
 Set your Supermemory API key:
 
 ```bash
+cp .env.example .env
+# Edit .env and add your actual API key
 export SUPERMEMORY_API_KEY="your-api-key-here"
 ```
 
 ### Vapi Server URL Setup
 
-1. Go to your Vapi dashboard
+1. Go to your Vapi dashboard (https://dashboard.vapi.ai)
 2. Select your phone number
-3. Set server URL to your endpoint (e.g., `https://your-server.com/api/assistant-selector`)
+3. Set server URL to your endpoint: `https://your-server.com/api/assistant-selector`
 4. Configure your server to handle `assistant-request` messages
+5. Set webhook URL to: `https://your-server.com/api/vapi-webhook`
 
-## Examples
+### Vapi Tool Server Setup
 
-See `examples/` directory for complete working examples:
+1. Create tool server endpoints at `/api/tools/{toolName}`
+2. Configure tools in Vapi assistant or server
+3. Tools call your endpoints dynamically during conversations
+4. Return memories from Supermemory in real-time
 
-- `basic-usage.ts` - Simple usage demonstration
-- `server-integration.ts` - Vapi server integration
-- `tool-integration.ts` - Tool-based memory retrieval
-- `multi-tenant.ts` - Multi-tenant application
-
-## Development
+## 🧪 Development
 
 ```bash
 # Install dependencies
@@ -338,15 +343,149 @@ bun run build
 bun run dev
 ```
 
-## License
+## 📊 How It Works
 
-MIT
+```
+┌─────────────────────────────────────────────────────┐
+│                  Vapi Call                    │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   │ 1. Incoming Call (assistant-request)
+                   ▼
+          ┌─────────────────┐
+          │   Your Server   │
+          └────────┬────────┘
+                   │
+                   │ 2. Call vapi-memory.getContext(userId)
+                   ▼
+    ┌──────────────────────────────────────────┐
+    │           Vapi-Memory Library            │
+    │                                          │
+    │  ┌────────────────────────────────────┐  │
+    │  │  Supermemory Client Wrapper        │  │
+    │  │  - profile()                       │  │
+    │  │  - add()                           │  │
+    │  │  - search.memories()               │  │
+    │  └────────────────────────────────────┘  │
+    │                                          │
+    │  ┌────────────────────────────────────┐  │
+    │  │  Context Formatter                │  │
+    │  │  - Token budgeting                 │  │
+    │  │  - Relevance ranking               │  │
+    │  │  - Deduplication                  │  │
+    │  └────────────────────────────────────┘  │
+    │                                          │
+    │  ┌────────────────────────────────────┐  │
+    │  │  Vapi Response Builder            │  │
+    │  │  - System message injection        │  │
+    │  │  - Assistant configuration          │  │
+    │  └────────────────────────────────────┘  │
+    └────────────────────┬─────────────────────┘
+                         │
+                         │ 3. Return context
+                         ▼
+    ┌──────────────────────────────────────────┐
+    │         Supermemory API                 │
+    │  (User profile + semantic search)      │
+    └──────────────────────────────────────────┘
+                         │
+                         │ 4. Formatted context
+                         ▼
+              ┌─────────────────┐
+              │   Your Server   │
+              └────────┬────────┘
+                       │
+                       │ 5. Return assistant with context to Vapi
+                       ▼
+              ┌─────────────────┐
+              │      Vapi       │
+              │  (AI responds)  │
+              └─────────────────┘
+                       │
+                       │ 6. Call ends (call-ended event)
+                       ▼
+              ┌─────────────────┐
+              │   Your Server   │
+              └────────┬────────┘
+                       │
+                       │ 7. Call vapi-memory.storeConversation()
+                       ▼
+    ┌──────────────────────────────────────────┐
+    │           Vapi-Memory Library            │
+    │  (Ingest conversation to Supermemory)  │
+    └──────────────────────────────────────────┘
+```
 
-## Contributing
+## 📦 Package Contents
+
+```
+vapi-memory/
+├── src/
+│   ├── VapiMemory.ts              # Main library class
+│   ├── client/
+│   │   └── SupermemoryClient.ts   # Supermemory API wrapper
+│   ├── builders/
+│   │   └── VapiResponseBuilder.ts # Vapi response construction
+│   ├── formatters/
+│   │   ├── ContextFormatter.ts      # Context formatting & deduplication
+│   │   └── VariableFormatter.ts     # Variable extraction & formatting
+│   ├── tools/
+│   │   ├── VapiToolFactory.ts     # Create Vapi tools
+│   │   └── MemoryTools.ts          # Pre-built tool sets
+│   ├── utils/
+│   │   ├── cache.ts                # LRU cache implementation
+│   │   └── token-counter.ts        # Token estimation
+│   └── types/
+│       └── index.ts                # TypeScript definitions
+├── examples/
+│   ├── basic-usage.ts             # Simple usage demonstration
+│   ├── vapi-bun-server.ts         # Complete Vapi server ⭐
+│   ├── server-integration.ts        # Server-side assistant selection
+│   └── advanced-context.ts         # Cache performance demo
+├── test/
+│   ├── VapiMemory.test.ts         # Core library tests
+│   ├── TokenCounter.test.ts        # Token counting tests
+│   ├── LRUCache.test.ts           # Cache tests
+│   └── ContextFormatter.test.ts    # Formatting tests
+└── README.md                      # This file
+```
+
+## 🎯 Use Cases
+
+- **Customer Support**: Remember previous issues, user preferences, VIP status
+- **Personal Assistants**: Learn user habits, routines, and preferences
+- **Sales**: Recall previous conversations, deals in progress, client history
+- **Healthcare**: Remember patient history, medications, appointments
+- **Education**: Track student progress, previous discussions, learning goals
+
+## 🔒 Security
+
+- Never commit API keys to version control
+- Use environment variables for sensitive configuration
+- Validate user IDs before querying Supermemory
+- Use HTTPS for all API calls
+- Enable rate limiting to prevent abuse
+
+## 📝 License
+
+MIT - Free to use in personal and commercial projects
+
+## 🤝 Contributing
 
 Contributions are welcome! Please read our contributing guidelines.
 
-## Support
+- Fork the repository
+- Create a feature branch
+- Make your changes
+- Write tests
+- Submit a pull request
+
+## 🆘 Support
 
 - 📖 [Documentation](https://github.com/yourusername/vapi-memory)
 - 🐛 [Issue Tracker](https://github.com/yourusername/vapi-memory/issues)
+- 💬 [Discussions](https://github.com/yourusername/vapi-memory/discussions)
+
+---
+
+**Made with ❤️ for the Vapi community**
