@@ -3,7 +3,7 @@ node_modules
 
 # output
 out
-dist
+dist/
 *.tgz
 
 # code coverage
@@ -13,7 +13,7 @@ coverage
 # logs
 logs
 _.log
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+report.[0-9]_.[0-9]_.[0-9]_.json
 
 # dotenv environment variable files
 .env
@@ -33,4 +33,3 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 .cursor/
-dist/
