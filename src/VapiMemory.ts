@@ -267,6 +267,74 @@ export class VapiMemory {
     });
   }
 
+  /**
+   * Build a response using an existing Vapi assistant ID with context injected as overrides.
+   * Use this when you have a pre-built assistant in the Vapi dashboard and want to
+   * inject memory context as system message overrides.
+   *
+   * @param context - The formatted context from getContext()
+   * @param assistantId - Your Vapi assistant ID from the dashboard
+   * @param additionalOverrides - Optional extra overrides (voice, model, etc.)
+   */
+  buildWithOverrides(
+    context: FormattedContext,
+    assistantId: string,
+    additionalOverrides?: Partial<AssistantOverrides>
+  ): AssistantResponse {
+    return VapiResponseBuilder.buildOverrides({
+      context,
+      assistantId,
+      additionalOverrides,
+    });
+  }
+
+  /**
+   * Build a response using an existing Vapi assistant ID with context and memory tools.
+   * Combines assistantId overrides with tool injection for mid-call memory access.
+   *
+   * @param context - The formatted context from getContext()
+   * @param assistantId - Your Vapi assistant ID from the dashboard
+   * @param toolSet - Optional custom tool definitions (defaults to full memory tool set)
+   * @param additionalOverrides - Optional extra overrides (voice, model, etc.)
+   */
+  buildWithToolsAndOverrides(
+    context: FormattedContext,
+    assistantId: string,
+    toolSet?: ToolDefinition[],
+    additionalOverrides?: Partial<AssistantOverrides>
+  ): AssistantResponse {
+    const tools = toolSet || VapiToolFactory.createToolSet();
+
+    return VapiResponseBuilder.buildOverrides({
+      context,
+      assistantId,
+      additionalOverrides: {
+        tools: tools as Tool[],
+        ...additionalOverrides,
+      },
+    });
+  }
+
+  /**
+   * Select a Vapi assistant by ID with optional context injection.
+   * Lightweight version that just selects the assistant and optionally adds context.
+   *
+   * @param context - The formatted context from getContext()
+   * @param assistantId - Your Vapi assistant ID from the dashboard
+   * @param includeContext - Whether to inject context as system message (default: true)
+   */
+  selectAssistant(
+    context: FormattedContext,
+    assistantId: string,
+    includeContext: boolean = true
+  ): AssistantResponse {
+    return VapiResponseBuilder.buildAssistantSelection({
+      context,
+      assistantId,
+      includeContext,
+    });
+  }
+
   buildWithVariables(
     context: FormattedContext,
     baseAssistant?: Partial<Assistant>

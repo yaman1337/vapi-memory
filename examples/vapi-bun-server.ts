@@ -187,6 +187,64 @@ Bun.serve({
         }
       }
 
+      // Assistant request using existing Vapi assistant ID (assistantId path)
+      // Route: POST /api/assistant/:assistantId
+      // Use this when you have a pre-built assistant in the Vapi dashboard
+      if (path.startsWith('/api/assistant/')) {
+        const assistantId = path.replace('/api/assistant/', '');
+
+        if (!assistantId) {
+          return new Response(
+            JSON.stringify({ error: 'Missing assistantId in URL' }),
+            { status: 400, headers: corsHeaders }
+          );
+        }
+
+        if (body.message?.type === 'assistant-request') {
+          const phoneNumber = body.call.from.phoneNumber;
+          const userId = phoneNumber;
+
+          console.log(`📞 Incoming call from: ${phoneNumber} (assistant: ${assistantId})`);
+
+          try {
+            const context = await memory.getContext({
+              userId,
+              query: 'Incoming call',
+              includeProfile: true,
+              includeRecent: true,
+              includeSearch: true,
+            });
+
+            console.log(`✅ Context retrieved in ${context.metadata.retrievalTime}ms`);
+
+            // Option A: Context only -- inject memory as system message override
+            // const response = memory.buildWithOverrides(context, assistantId);
+
+            // Option B: Context + tools -- inject memory and attach memory tools
+            const response = memory.buildWithToolsAndOverrides(
+              context,
+              assistantId,
+              tools as any[],
+            );
+
+            // Option C: Minimal -- just select the assistant with context
+            // const response = memory.selectAssistant(context, assistantId);
+
+            return new Response(JSON.stringify(response), {
+              headers: corsHeaders,
+              status: 200,
+            });
+          } catch (error) {
+            console.error('❌ Error handling assistant override request:', error);
+
+            return new Response(
+              JSON.stringify({ error: 'Failed to get context' }),
+              { status: 500, headers: corsHeaders }
+            );
+          }
+        }
+      }
+
       // Tool request from Vapi
       if (path.startsWith('/api/tools/')) {
         const toolName = path.replace('/api/tools/', '');
@@ -271,7 +329,8 @@ Bun.serve({
         version: '1.0.0',
         tools: tools.map(t => ({ name: t.name, description: t.description })),
         endpoints: {
-          assistant: 'POST /api/assistant-selector',
+          assistant: 'POST /api/assistant-selector (full dynamic assistant)',
+          assistantOverride: 'POST /api/assistant/:assistantId (existing assistant + context overrides)',
           tools: 'POST /api/tools/{toolName}',
           webhook: 'POST /api/webhook',
         },
@@ -284,9 +343,10 @@ Bun.serve({
 
 console.log('\n=== Vapi Memory Server ===');
 console.log('Endpoints:');
-console.log('  POST /api/assistant-selector - Handle Vapi assistant requests');
-console.log('  POST /api/tools/{name}    - Handle Vapi tool calls');
-console.log('  POST /api/webhook         - Handle call-ended webhooks');
+console.log('  POST /api/assistant-selector     - Full dynamic assistant (builds assistant from scratch)');
+console.log('  POST /api/assistant/:assistantId - Existing assistant + context overrides (uses assistantId)');
+console.log('  POST /api/tools/{name}        - Handle Vapi tool calls');
+console.log('  POST /api/webhook             - Handle call-ended webhooks');
 console.log('\n📖 See README for usage examples');
 console.log('\n⚠️  Set SUPERMEMORY_API_KEY environment variable');
 console.log('===============================\n');
