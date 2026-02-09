@@ -29,7 +29,7 @@
     "build": "bun run build:esm && bun run build:cjs && bun run build:types",
     "build:esm": "bun build src/index.ts --outdir ./dist --target node --format esm --external supermemory",
     "build:cjs": "bun build src/index.ts --outfile ./dist/index.cjs --target node --format cjs --external supermemory",
-    "build:types": "tsc --declaration --outDir ./dist --rootDir ./src",
+    "build:types": "tsc --emitDeclarationOnly --declaration --outDir ./dist --rootDir ./src --noEmit false",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
