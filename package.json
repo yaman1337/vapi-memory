@@ -1,6 +1,6 @@
 {
   "name": "vapi-memory",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Memory provider for Vapi voice AI agents using Supermemory",
   "type": "module",
   "main": "./dist/index.js",
